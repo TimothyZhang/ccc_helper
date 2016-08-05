@@ -42,6 +42,9 @@ except:
     print 'pygraphviz not found'
 
 
+option = None
+
+
 def create_project_graph(project):
     """
     :param Project project:
@@ -99,7 +102,12 @@ def add_node(g, asset):
             color = 'blue'
     else:
         color = 'red'
-    g.add_node(asset.relative_path, label=asset.file.name, color=color)
+
+    if option.long:
+        label = asset.relative_path
+    else:
+        label = asset.file.name
+    g.add_node(asset.relative_path, label=label, color=color)
 
 
 def create_image(g, path):
@@ -128,24 +136,14 @@ def create_image(g, path):
     print 'Image saved to', path
 
 
-def test1():
-    p = Project('../kingdom')
-    p.load()
-    create_image(create_project_graph(p), 'project.png')
-
-
-def test2():
-    p = Project('../kingdom')
-    p.load()
-    prefab = p.get_prefab_by_path('prefab/common/full_screen/separator_style_1.prefab')
-    create_image(create_asset_graph(prefab), 'prefab.png')
-
-
 def main():
     parser = optparse.OptionParser()
     parser.add_option('-p', '--project', dest='project', help='project path')
     parser.add_option('-a', '--asset', dest='asset', help='asset path (relative to assets)')
     parser.add_option('-o', '--output', dest='output', help='output file name')
+    parser.add_option('-l', '--long', dest='long', default='false', action='store_true',
+                      help='show long label (relative path to assets)')
+
     usage = """
 python ccc_graph.py [options]
 e.g.:
@@ -156,6 +154,7 @@ e.g.:
 """
 
     parser.set_usage(usage)
+    global option
     option, args = parser.parse_args()
 
     if not option.project:
