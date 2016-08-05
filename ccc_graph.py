@@ -15,14 +15,31 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Structer.  If not, see <http://www.gnu.org/licenses/>.
-# import matplotlib.pyplot as plt
+
 import optparse
 import os
-
-import networkx as nx
-# from networkx.drawing.nx_pydot import graphviz_layout
-
 from ccc import Project, Prefab
+import networkx as nx
+
+
+plt = graphviz_layout = pygraphviz = None
+# noinspection PyBroadException
+try:
+    import matplotlib.pyplot as plt
+except:
+    print 'matplotlib not found'
+
+# noinspection PyBroadException
+try:
+    from networkx.drawing.nx_pydot import graphviz_layout
+except:
+    print 'graphviz_layout not found'
+
+
+try:
+    import pygraphviz
+except:
+    print 'pygraphviz not found'
 
 
 def create_project_graph(project):
@@ -86,21 +103,29 @@ def add_node(g, asset):
 
 
 def create_image(g, path):
-    # nodes = g.nodes(True)
-    # colors = [attrs['color'] for n, attrs in nodes]
-    # labels = {n: attrs['label'] for n, attrs in nodes}
+    path = os.path.relpath(path)
 
-    # pos = graphviz_layout(g)
-    # nx.draw_networkx_nodes(g, pos, node_shape='o', node_color=colors, alpha=0.3)
-    # nx.draw_networkx_edges(g, pos, style='solid', alpha=0.2)
-    # nx.draw_networkx_labels(g, pos, labels, alpha=0.5)
-    # plt.show()
+    if pygraphviz:
+        a = nx.nx_agraph.to_agraph(g)
+        # ['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
+        a.layout(prog='neato', args="-Goverlap=false -Gsplines=true")  # splines=true
+        a.draw(path)
+    elif plt:
+        nodes = g.nodes(True)
+        colors = [attrs['color'] for n, attrs in nodes]
+        labels = {n: attrs['label'] for n, attrs in nodes}
 
-    a = nx.nx_agraph.to_agraph(g)
-    # ['neato'|'dot'|'twopi'|'circo'|'fdp'|'nop']
-    a.layout(prog='neato', args="-Goverlap=false -Gsplines=true")  # splines=true
-    a.draw(path)
-    print 'Image saved to', os.path.relpath(path)
+        if graphviz_layout:
+            pos = graphviz_layout(g)
+        else:
+            pos = nx.spring_layout(g)
+        nx.draw_networkx_nodes(g, pos, node_shape='o', node_color=colors, alpha=0.3)
+        nx.draw_networkx_edges(g, pos, style='solid', alpha=0.2)
+        nx.draw_networkx_labels(g, pos, labels, alpha=0.5)
+        # plt.show()
+        plt.imsave(path)  # todo: this is not tested!
+
+    print 'Image saved to', path
 
 
 def test1():
