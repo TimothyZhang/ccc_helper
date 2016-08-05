@@ -1358,7 +1358,7 @@ class Project(object):
         return errors
 
     def _load_setting(self):
-        setting = yaml.load(open(os.path.join(self.path, 'ccchelper.yaml')))
+        setting = yaml.load(open(os.path.join(self.path, 'ccc_helper.yaml')))
         self.ignore_components = set(setting.get('ignore_components', []))
 
         ignore_component_properties = setting.get('ignore_component_properties', {})
@@ -1554,7 +1554,7 @@ class Backup(object):
     def __init__(self, project):
         self.project = project
         # noinspection SpellCheckingInspection
-        self.path = os.path.join(project.path, 'ccchelper_backup',
+        self.path = os.path.join(project.path, 'ccc_helper_backup',
                                  datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         os.makedirs(self.path)
         self.log = open(os.path.join(self.path, 'logs.txt'), 'w')
