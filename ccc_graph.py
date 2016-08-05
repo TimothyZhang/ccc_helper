@@ -145,7 +145,7 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('-p', '--project', dest='project', help='project path')
     parser.add_option('-a', '--asset', dest='asset', help='asset path (relative to assets)')
-    parser.add_option('-o', '--output', dest='output', default='ccc.png', help='output file name')
+    parser.add_option('-o', '--output', dest='output', help='output file name')
     usage = """
 python ccc_graph.py [options]
 e.g.:
@@ -164,12 +164,16 @@ e.g.:
 
     project = Project(option.project)
     project.load()
+
+    output = option.output
+    if not output:
+        output = '%s.jpg' % project.name
     
     if option.asset:        
         asset = project.get_asset_by_path(option.asset)
-        create_image(create_asset_graph(asset), option.output)
+        create_image(create_asset_graph(asset), output)
     else:
-        create_image(create_project_graph(project), option.output)
+        create_image(create_project_graph(project), output)
 
 if __name__ == '__main__':
     main()

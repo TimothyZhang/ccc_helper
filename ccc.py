@@ -1326,6 +1326,7 @@ class Project(object):
         """:type: dict[str, dict[str, list[str]]]"""
 
         self.path = os.path.realpath(path)
+        self.name = os.path.split(self.path)[-1]
 
         self._uuid_to_assets = {}
         """:type: dict[str, Asset]"""
@@ -1343,7 +1344,7 @@ class Project(object):
         os.chdir(self.path)
         errors = 0
         try:
-            self._load_components()
+            self._load_component_names()
             errors += self._load_assets()
             self._sort_assets()
         finally:
@@ -1389,7 +1390,8 @@ class Project(object):
         self.ignore_prefabs = setting.get('ignore_prefabs', {})
 
     # noinspection SpellCheckingInspection
-    def _load_components(self):
+    def _load_component_names(self):
+        # Custom components names are stored in bundle.project.js
         bundle_js = os.path.join('library', 'bundle.project.js')
         bundle = open(bundle_js).read()
         # cc._RFpush(module, '4c3c5p1IVNIn7SN0Moet2KO', 'KdPrefab');

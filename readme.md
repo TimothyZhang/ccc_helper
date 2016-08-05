@@ -10,8 +10,17 @@
 
 使用(Usage)
 ==========
-* ccc.py -h
-* ccc_graph.py -h
+* ccc.py -p <path> verify
+  检查项目中哪些Prefab不一致
+
+* ccc.py -p <path> sync
+  同步项目中所有不一致的Prefab
+
+* ccc_graph.py -p <path>
+  ** 红色节点：场景
+  ** 绿色节点: 没有子节点的Prefab（不嵌套包含其他Prefab）
+  ** 蓝色节点：嵌套包含其他Prefab的Prefab
+  ![Alt text](/test_project.png?raw=true "test_project.jpg")
 
 
 术语(Terms)
