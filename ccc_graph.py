@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2014 Timothy Zhang(zt@live.cn).
 #
 # This file is part of Structer.
@@ -14,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Structer.  If not, see <http://www.gnu.org/licenses/>.
-
 # import matplotlib.pyplot as plt
 import optparse
 import os

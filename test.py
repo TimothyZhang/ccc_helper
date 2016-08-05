@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2014 Timothy Zhang(zt@live.cn).
 #
 # This file is part of Structer.
