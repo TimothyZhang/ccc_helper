@@ -4,25 +4,6 @@
 ## 介绍(Introduction)
 为cocos creator增加Prefab嵌套以及自动同步功能。
 
-## 使用(Usage)
-* 检查项目中哪些Prefab不一致
-> ccc.py -p test_project verify
-  
-
-* 同步项目中所有不一致的Prefab
-> ccc.py -p test_project sync
-
-* 查看项目中所有Preafb的引用关系
-> ccc_graph.py -p test_project
-
-  ![graph of test_project](/test_project.jpg?raw=true)
-  
-  A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有三种颜色
-  * 红色: 场景
-  * 绿色: 没有子节点的Prefab（不嵌套包含其他Prefab）
-  * 蓝色: 嵌套包含其他Prefab的Prefab
-  
-
 ## 术语(Terms)
 * Prefab Root: Prefab文件的根节点
 * Instance Node: 包含KdPrefab组件的Node
@@ -54,3 +35,22 @@
 * CR2: 忽略组件的指定属性(ignore_component_properties)
 * CR3: 忽略组件的空属性(ignore_component_properties_if_empty)，空指prefab中，值为0, "", [], null等，或不存在
 * CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性
+
+
+## 使用(Usage)
+* 检查项目中哪些Prefab不一致
+> ccc.py -p test_project verify
+  
+
+* 同步项目中所有不一致的Prefab
+> ccc.py -p test_project sync
+
+* 查看项目中所有Preafb的引用关系
+> ccc_graph.py -p test_project
+
+  ![graph of test_project](/test_project.jpg?raw=true)
+  
+  A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有三种颜色
+  * 红色: 场景
+  * 绿色: 没有子节点的Prefab（不嵌套包含其他Prefab）
+  * 蓝色: 嵌套包含其他Prefab的Prefab
