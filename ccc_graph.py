@@ -141,7 +141,7 @@ def main():
     parser.add_option('-p', '--project', dest='project', help='project path')
     parser.add_option('-a', '--asset', dest='asset', help='asset path (relative to assets)')
     parser.add_option('-o', '--output', dest='output', help='output file name')
-    parser.add_option('-l', '--long', dest='long', default='false', action='store_true',
+    parser.add_option('-l', '--long', dest='long', default=False, action='store_true',
                       help='show long label (relative path to assets)')
 
     usage = """
