@@ -1,0 +1,7 @@
+networkx
+pygraphviz
+VCForPython
+graphviz
+
+# 如果WINDOWS安装pygraphviz失败，试试:
+pip install --global-option=build_ext --global-option="-ID:\Tools\Graphviz2.38\include" --global-option="-LD:\Tools\Graphviz2.38\lib\release\lib" pygraphviz

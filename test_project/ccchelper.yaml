@@ -1,0 +1,22 @@
+# 忽略整个组件
+ignore_components: []
+
+# 忽略组件的属性
+ignore_component_properties:
+    KdCostButton: ["type"]
+    cc.EditBox: ["_N$placeholder"]
+
+# 当Prefab中组件的属性为空时，忽略
+ignore_component_properties_if_empty":
+    KdRadioGroup: ["focusChangedHandlers"]
+    cc.Button: ["clickEvents"]
+
+# 忽略Prefab
+# ignore_prefabs:
+#     prefab/test/confirm_dialog.prefab:
+#       New Node/confirm/#cc.Sprite: ["_spriteFrame", "_atlas"]
+
+# 忽略Instance(可能是Prefab或者Scene)
+#ignore_instances:
+#    prefab/test/confirm_dialog.prefab:
+#      New Node/confirm/#cc.Sprite: ["_spriteFrame", "_atlas"]
