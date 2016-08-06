@@ -63,7 +63,7 @@ def create_asset_graph(asset):
     """
     g = nx.DiGraph()
     assets = [asset]
-    assets += asset.search_references()
+    assets += asset.search_referents()
     if isinstance(asset, Prefab):
         assets += asset.search_referers()
 
@@ -77,13 +77,13 @@ def add_assets_to_graph(g, assets):
     :param Sequence[Asset] assets:
     """
     for asset in assets:
-        if not asset.referers and not asset.references:
+        if not asset.referers and not asset.referents:
             continue
 
         add_node(g, asset)
 
     for asset in assets:
-        if not asset.referers and not asset.references:
+        if not asset.referers and not asset.referents:
             continue
 
         for ref in asset.referers:
@@ -96,7 +96,7 @@ def add_node(g, asset):
     :param Asset asset:
     """
     if isinstance(asset, Prefab):
-        if not asset.references:
+        if not asset.referents:
             color = 'green'
         else:
             color = 'blue'
@@ -149,7 +149,7 @@ python ccc_graph.py [options]
 e.g.:
     # visualize entire project (to ccc.png)
     python ccc_graph.py -p .
-    # visualize one prefab (and its referer and references)
+    # visualize one prefab (and its referer and referents)
     python ccc_graph.py -p . -a a.prefab -o prefab_a.png
 """
 
