@@ -289,7 +289,7 @@ class Asset(Element):
         self.references = set()
         """:type: set[Prefab]"""
         # 引用到我的
-        self.referents = set()
+        self.referers = set()
         """:type: set[Asset]"""
         # 在森林中的深度(从根开始的最长路径)
         self.depth = 0
@@ -362,16 +362,16 @@ class Asset(Element):
                 current = current.get_child_by_name(item)
         return current
 
-    def search_referents(self):
+    def search_referers(self):
         """
         查找引用到prefab的所有asset(prefab/scene)，包含直接/间接引用的。按照依赖关系排序(前面的不依赖后面的)。
         :rtype: list[Asset]
         """
         assets, result = {self}, set()
         while assets:
-            referents = set(sum([list(asset.referents) for asset in assets], []))
-            result.update(referents)
-            assets = referents
+            referers = set(sum([list(asset.referers) for asset in assets], []))
+            result.update(referers)
+            assets = referers
 
         result = list(result)
         result.sort(key=lambda x: x.depth, reverse=True)  # depth大的在前
@@ -1460,7 +1460,7 @@ class Project(object):
         :param bool dry_run:
         :return:
         """
-        assets = prefab.search_referents()
+        assets = prefab.search_referers()
         assets.insert(0, prefab)
         self._synchronized_assets(assets, dry_run, 'synchronize %s' % prefab.relative_path)
 
@@ -1533,7 +1533,7 @@ class Project(object):
         # # 初始化
         # for asset in self.iterate_assets():
         #     asset.references = []
-        #     asset.referents = []
+        #     asset.referers = []
         #     asset.depth = 0
 
         # 查找每个Asset引用到的其他Asset，形成森林
@@ -1541,11 +1541,11 @@ class Project(object):
             for node in asset.root.iterate_instance_roots(False):
                 prefab = self.get_asset_by_uuid(node.get_prefab_uuid())
                 asset.references.add(prefab)
-                prefab.referents.add(asset)
+                prefab.referers.add(asset)
 
         # BFS遍历，计算每个asset的depth
         # 所有的树根，depth都为0
-        assets = {asset for asset in self.iterate_assets() if not asset.referents}
+        assets = {asset for asset in self.iterate_assets() if not asset.referers}
         depth = 1
         while assets:
             references = set(sum([list(asset.references) for asset in assets], []))  # 被引用的
@@ -1561,10 +1561,10 @@ class Project(object):
             for ref in asset.references:
                 print '   ', ref.relative_path
 
-    def dump_referents(self):
+    def dump_referers(self):
         for asset in self.iterate_assets():
             print asset.relative_path
-            for ref in asset.referents:
+            for ref in asset.referers:
                 print '   ', ref.relative_path
 
 
@@ -1942,7 +1942,7 @@ e.g.:
     python ccc.py -p . sync a.prefab
     # verify entire project, won't modify any file
     python ccc.py -p . verify
-    # verify one prefab (and its referents)
+    # verify one prefab (and its referers)
     python ccc.py -p . verify a.prefab
 """
 

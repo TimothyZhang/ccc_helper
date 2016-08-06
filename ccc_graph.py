@@ -65,7 +65,7 @@ def create_asset_graph(asset):
     assets = [asset]
     assets += asset.search_references()
     if isinstance(asset, Prefab):
-        assets += asset.search_referents()
+        assets += asset.search_referers()
 
     add_assets_to_graph(g, assets)
     return g
@@ -77,16 +77,16 @@ def add_assets_to_graph(g, assets):
     :param Sequence[Asset] assets:
     """
     for asset in assets:
-        if not asset.referents and not asset.references:
+        if not asset.referers and not asset.references:
             continue
 
         add_node(g, asset)
 
     for asset in assets:
-        if not asset.referents and not asset.references:
+        if not asset.referers and not asset.references:
             continue
 
-        for ref in asset.referents:
+        for ref in asset.referers:
             g.add_edge(ref.relative_path, asset.relative_path)
 
 
@@ -149,7 +149,7 @@ python ccc_graph.py [options]
 e.g.:
     # visualize entire project (to ccc.png)
     python ccc_graph.py -p .
-    # visualize one prefab (and its referents and references)
+    # visualize one prefab (and its referer and references)
     python ccc_graph.py -p . -a a.prefab -o prefab_a.png
 """
 
