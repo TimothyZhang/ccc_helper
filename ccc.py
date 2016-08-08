@@ -1464,7 +1464,12 @@ class Project(object):
         return errors
 
     def _load_setting(self):
-        setting = yaml.load(open(os.path.join(self.path, 'ccc_helper.yaml')))
+        yaml_path = os.path.join(self.path, 'ccc_helper.yaml')
+        if not os.path.exists(yaml_path):
+            print 'setting not found at:', yaml_path
+            return
+
+        setting = yaml.load(open(yaml_path))
         self.ignore_components = set(setting.get('ignore_components', []))
 
         ignore_component_properties = setting.get('ignore_component_properties', {})
@@ -1484,7 +1489,7 @@ class Project(object):
         bundle_js = os.path.join('library', 'bundle.project.js')
         bundle = open(bundle_js).read()
         # cc._RFpush(module, '4c3c5p1IVNIn7SN0Moet2KO', 'KdPrefab');
-        pairs = re.findall('cc\._RFpush\(module,\s+\'(.+?)\',\s+\'([a-zA-Z0-9_]+)\'\);', bundle, re.M)
+        pairs = re.findall('cc\._RFpush\(\s*module\s*,\s*\'(.+?)\'\s*,\s*\'(.+?)\'\s*\);', bundle, re.M)
         # noinspection PyTypeChecker
         self._component_id_to_names = dict(pairs)
 

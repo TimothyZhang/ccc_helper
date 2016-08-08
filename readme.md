@@ -17,16 +17,18 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * 同步项目中所有不一致的Prefab
 > ccc.py -p test_project sync
 
-* 查看项目中所有Prefab的引用关系
+* 查看项目中所有Prefab/Scene的引用关系
 > ccc_graph.py -p test_project
 
   ![graph of test_project](/test_project.jpg?raw=true)
   
-  A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有三种颜色
+  A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有4种颜色
   * 红色: 场景
   * 粉色: 不被其他Prefab/Scene引用的Prefab
   * 绿色: 不引用其他Prefab的Prefab
   * 蓝色: 既被引用，又引用其他Prefab的Prefab
+
+  注：无任何引用关系的Prefab/Scene，不会包含在图中
   
 
 ## 术语(Terms)
