@@ -495,7 +495,7 @@ class Node(Element):
         node = self
         root = None
         while node:
-            if node.get_prefab_uuid() is not None:
+            if node.get_prefab_uuid() is not None and node.parent is not None:
                 root = node
             node = node.parent
         return root
@@ -1378,8 +1378,19 @@ class PrefabInfo(Element):
 
     def post_load(self, file_):
         root_ref = self.pop_data('root')
-        if get_element_ref(root_ref) != self.node.instance_root.loaded_index:
-            raise Exception('Instance root not match: %s' % self.node.relative_path)
+
+        if isinstance(self.node.root.root_element, Prefab):
+            if get_element_ref(root_ref) != self.node.root.loaded_index:
+                if get_element_ref(root_ref) != self.node.instance_root.loaded_index:
+                    raise Exception('Invalid PrefabInfo: %s %s %s' % (self.node.relative_path,
+                                                                      self.node.instance_root.relative_path,
+                                                                      file_.elements[get_element_ref(root_ref)][0]))
+        else:
+            if get_element_ref(root_ref) != self.node.instance_root.loaded_index:
+                ref = file_.elements[get_element_ref(root_ref)][0]
+                raise Exception('Instance root not match: %s %s %s' % (self.node.relative_path,
+                                                                       self.node.instance_root.relative_path,
+                                                                       ref.relative_path))
 
     @property
     def file_id(self):
