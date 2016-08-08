@@ -1435,16 +1435,17 @@ class Project(object):
         try:
             self._load_component_names()
             errors += self._load_assets()
-            self._sort_assets()
+            if not errors:
+                self._sort_assets()
         finally:
             os.chdir(cwd)
 
-        errors += self._ignore_prefabs()
+        errors += self._check_ignore_prefabs()
 
         if errors > 0:
             raise Exception('Load failed.')
 
-    def _ignore_prefabs(self):
+    def _check_ignore_prefabs(self):
         errors = 0
 
         for path, elements in self.ignore_prefabs.iteritems():
