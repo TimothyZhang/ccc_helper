@@ -48,8 +48,7 @@
 * SS4: 忽略Node.active
 * SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
 * SS6: 忽略Layout的_layoutSize
-* SS7: KdText,忽略KdLabel.string, Sprite.spriteFrame, Sprite.atlas
-* SS8: KdLabel,忽略color, font, fontSize, lineHeight
+
 
 ## 自定义规则(Custom Rules)
 在ccc_helper.yaml中配置
