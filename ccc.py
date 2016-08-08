@@ -1979,7 +1979,7 @@ e.g.:
 
     option, args = parser.parse_args()
     action = args[0] if args else None
-    if action not in ('sync', 'verify'):
+    if action not in ('sync', 'verify', 'dump_referers', 'dump_referents'):
         parser.print_help()
         return
 
