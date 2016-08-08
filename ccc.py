@@ -43,6 +43,11 @@ IGNORE_COMPONENT_PROPERTIES = {
 }
 
 
+class LabelOverflow(object):
+    NONE = 0
+    RESIZE_HEIGHT = 3
+
+
 class KdPrefabStrategy(object):
     ALL = 0
     NEVER = 1
@@ -711,7 +716,7 @@ class Node(Element):
         else:
             ctx.push(self.name)
 
-        self.synchronize_without_children(other, ctx, is_instance_root)
+        self._synchronize_without_children(other, ctx, is_instance_root)
 
         to_remove = []
         for i, my_child in enumerate(self.children):
@@ -743,7 +748,7 @@ class Node(Element):
             ctx.change('(children order)', my_order, other_order)
         ctx.pop()
 
-    def synchronize_without_children(self, other, ctx, is_instance_root):
+    def _synchronize_without_children(self, other, ctx, is_instance_root):
         """
         :param Node other:
         :param CompareContext ctx:
@@ -757,6 +762,11 @@ class Node(Element):
         # CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性
         if other._ignore_properties:
             ignores = ignores.union(other._ignore_properties)
+
+        # SS9: KdLabel,忽略color, font, fontSize, lineHeight
+        kdlabel = self.get_component('KdLabel')
+        if kdlabel:
+            ignores.add('_color')
 
         # SS2: instance root忽略: position, rotation, scale, anchor, size, skew, name
         synchronize_dict(self, other, self._data, other._data, ctx, ignores)
@@ -772,6 +782,29 @@ class Node(Element):
             self.prefab_info.uuid = other.root.root_element.file.uuid
 
         # components
+        self._synchronize_components(other, ctx, is_instance_root)
+
+        # SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
+        # 必须在组件同步完之后处理!
+        self._synchronize_position_and_size(other, ctx, is_instance_root, ignores)
+
+    def _synchronize_components(self, other, ctx, is_instance_root):
+        """
+        :param Node other:
+        :param CompareContext ctx:
+        :param bool is_instance_root:
+        """
+        ignore_components = self.project.ignore_components
+
+        # SS9: KdLabel,忽略color, font, fontSize, lineHeight
+        self_kdlabel = self.get_component('KdLabel') is not None
+        other_kdlabel = other.get_component('KdLabel') is not None
+        ignore_kdlabel = 'KdLabel' in self.project.ignore_components
+
+        if (self_kdlabel and other_kdlabel) or (self_kdlabel and ignore_kdlabel) \
+                or (other_kdlabel and not ignore_kdlabel):
+            ignore_components = ignore_components.union({'cc.LabelOutline', 'KdLabelShadow'})
+
         ctx.push('(components)')
         to_remove = []
         for i, component in enumerate(self.components):
@@ -780,7 +813,7 @@ class Node(Element):
                 continue
 
             # CR1: 完全忽略组件(ignore_components)
-            if component.name in self.project.ignore_components:
+            if component.name in ignore_components:
                 continue
 
             other_component = other.get_component(component.name)
@@ -825,11 +858,7 @@ class Node(Element):
                 ctx.change('(component order)', my_names, other_names)
         ctx.pop()  # components
 
-        # SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
-        # 必须在组件同步完之后处理!
-        self.synchronize_position_and_size(other, ctx, is_instance_root, ignores)
-
-    def synchronize_position_and_size(self, other, ctx, is_instance_root, ignores):
+    def _synchronize_position_and_size(self, other, ctx, is_instance_root, ignores):
         """
         SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
         :param Node other:
@@ -907,6 +936,16 @@ class Node(Element):
                                 size_ignores.add('width')
                             elif type_ == LayoutType.VERTICAL:
                                 size_ignores.add('height')
+
+        # cc.Label
+        # SS7: cc.Label的overflow为NONE时，忽略宽度;overflow为RESIZE_HEIGHT时，忽略高度
+        label = self.get_component('cc.Label')
+        if label:
+            overflow = label.get_property('_N$overflow')
+            if overflow == LabelOverflow.NONE:
+                size_ignores.add('width')
+            elif overflow == LabelOverflow.RESIZE_HEIGHT:
+                size_ignores.add('height')
 
         if self.position is None:
             assert self.loaded_index == -1
@@ -1039,27 +1078,55 @@ class Component(Element):
         if other._ignore_properties:
             ignores = ignores.union(other._ignore_properties)
 
+        # SS8: KdText,忽略KdLabel.string, Sprite.spriteFrame
+        ignores = ignores.union(self.ignore_by_kd_text(other))
+
+        # SS9: KdLabel,忽略color, font, fontSize, lineHeight
+        ignores = ignores.union(self.ignore_by_kd_label(other))
+
         ctx.push(self.name)
         synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignores)
         ctx.pop()
-    #
-    # def ignore_by_kdtext(self, other):
-    #     """
-    #     :param Component other:
-    #     :rtype: set[str]
-    #     """
-    #     if self.name not in {'cc.Label', 'cc.Sprite'}:
-    #         return
-    #
-    #     self_kdtext = self.node.get_component('KdText') is not None
-    #     other_kdtext = other.node.get_component('KdText') is not None
-    #     ignore_kdtext = 'KdText' in self.project.ignore_components
-    #     if (self_kdtext and other_kdtext) or (self_kdtext and ignore_kdtext) or (other_kdtext and not ignore_kdtext):
-    #         if self.name == 'cc.Label':
-    #             return {'_N$string'}
-    #         elif self.name == 'cc.Sprite':
-    #             # _atlas不一定!
-    #             return {'_spriteFrame'}
+
+    def ignore_by_kd_text(self, other):
+        """
+        :param Component other:
+        :rtype: set[str]
+        """
+        if self.name not in {'cc.Label', 'cc.Sprite'}:
+            return set()
+
+        self_kd_text = self.node.get_component('KdText') is not None
+        other_kd_text = other.node.get_component('KdText') is not None
+        ignore_kd_text = 'KdText' in self.project.ignore_components
+        if (self_kd_text and other_kd_text) or (self_kd_text and ignore_kd_text) \
+                or (other_kd_text and not ignore_kd_text):
+            if self.name == 'cc.Label':
+                return {'_N$string'}
+            elif self.name == 'cc.Sprite':
+                # 不要忽略_atlas，因为KdText有可能不修改_atlas
+                return {'_spriteFrame'}
+
+        return set()
+
+    def ignore_by_kd_label(self, other):
+        """
+        :param Component other:
+        :rtype: set[str]
+        """
+        if self.name != 'cc.Label':
+            return set()
+
+        self_kd_label = self.node.get_component('KdLabel') is not None
+        other_kd_label = other.node.get_component('KdLabel') is not None
+        ignore_kd_label = 'KdLabel' in self.project.ignore_components
+
+        if (self_kd_label and other_kd_label) or (self_kd_label and ignore_kd_label) \
+                or (other_kd_label and not ignore_kd_label):
+            if self.name == 'cc.Label':
+                return {'_isSystemFontUsed', '_N$file', '_lineHeight', '_fontSize', '_actualFontSize'}
+
+        return set()
 
     def __str__(self):
         return '<%s name=%s node=%s/>' % (self.__class__.__name__, self.name, self.node.relative_path)

@@ -5,6 +5,10 @@
 ## 介绍(Introduction)
 为cocos creator增加Prefab嵌套以及自动同步功能。
 
+#### 特别说明
+Kd开头的组件，为作者自定义组件，忽略即可。
+
+
 ## 使用(Usage)
 * Compare prefabs and their referents. 检查项目中哪些Prefab不一致
 > ccc.py -p test_project verify
@@ -48,6 +52,11 @@
 * SS4: 忽略Node.active
 * SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
 * SS6: 忽略Layout的_layoutSize
+* SS7: cc.Label的overflow为NONE时，忽略宽度;overflow为RESIZE_HEIGHT时，忽略高度
+* SS8: KdText,忽略KdLabel.string, Sprite.spriteFrame
+* SS9: KdLabel,忽略Node的_color, Label的_actualFontSize, _isSystemFontUsed, _N$file, _fontSize, _lineHeight, 以及LabelOutline, KdLabelShadow
+
+其中SS5, SS6, SS7, SS8, SS9主要是为了减少diff的输出。
 
 
 ## 自定义规则(Custom Rules)
