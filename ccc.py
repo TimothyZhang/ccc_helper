@@ -292,7 +292,7 @@ class Asset(Element):
         self.referers = set()
         """:type: set[Asset]"""
         # 在森林中的深度(从根开始的最长路径)
-        self.depth = 0
+        self.depth = None
 
     @property
     def path(self):
@@ -1038,6 +1038,24 @@ class Component(Element):
         ctx.push(self.name)
         synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignores)
         ctx.pop()
+    #
+    # def ignore_by_kdtext(self, other):
+    #     """
+    #     :param Component other:
+    #     :rtype: set[str]
+    #     """
+    #     if self.name not in {'cc.Label', 'cc.Sprite'}:
+    #         return
+    #
+    #     self_kdtext = self.node.get_component('KdText') is not None
+    #     other_kdtext = other.node.get_component('KdText') is not None
+    #     ignore_kdtext = 'KdText' in self.project.ignore_components
+    #     if (self_kdtext and other_kdtext) or (self_kdtext and ignore_kdtext) or (other_kdtext and not ignore_kdtext):
+    #         if self.name == 'cc.Label':
+    #             return {'_N$string'}
+    #         elif self.name == 'cc.Sprite':
+    #             # _atlas不一定!
+    #             return {'_spriteFrame'}
 
     def __str__(self):
         return '<%s name=%s node=%s/>' % (self.__class__.__name__, self.name, self.node.relative_path)
@@ -1547,14 +1565,21 @@ class Project(object):
         # BFS遍历，计算每个asset的depth
         # 所有的树根，depth都为0
         assets = {asset for asset in self.iterate_assets() if not asset.referers}
-        depth = 1
+        depth = 0
         while assets:
-            referents = set(sum([list(asset.referents) for asset in assets], []))  # 被引用的
-            for child in referents:
-                child.depth = depth
+            if depth > 100:
+                raise Exception('cyclic reference: %s' % list(assets)[0].relative_path)
 
+            for asset in assets:
+                asset.depth = depth
+
+            assets = set(sum([list(asset.referents) for asset in assets], []))  # 被引用的
             depth += 1
-            assets = referents
+
+        # 如果有循环引用，某些节点的depth可能为None（另一种可能是上面的循环不会结束）
+        for asset in self.iterate_assets():
+            if asset.depth is None:
+                raise Exception('cyclic reference: %s' % asset.relative_path)
 
     def dump_referents(self):
         for asset in self.iterate_assets():
