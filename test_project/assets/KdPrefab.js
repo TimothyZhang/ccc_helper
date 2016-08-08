@@ -1,5 +1,5 @@
 var PrefabSynchronizeStrategy = cc.Enum({
-    ALL: 0,
+    DEFAULT: 0,
     NEVER: 1
 })
 

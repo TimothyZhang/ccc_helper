@@ -1,26 +1,28 @@
 ## 警告(Warning)
 **本项目并非官方提供的功能，可能会造成数据丢失。使用之前，请务必备份好数据!**
+**This is NOT an official solution, BACKUP you data and use with CAUTION.**
 
 ## 介绍(Introduction)
 为cocos creator增加Prefab嵌套以及自动同步功能。
 
 ## 使用(Usage)
-* 检查项目中哪些Prefab不一致
+* Compare prefabs and their referents. 检查项目中哪些Prefab不一致
 > ccc.py -p test_project verify
   
 
 * 同步项目中所有不一致的Prefab
 > ccc.py -p test_project sync
 
-* 查看项目中所有Preafb的引用关系
+* 查看项目中所有Prefab的引用关系
 > ccc_graph.py -p test_project
 
   ![graph of test_project](/test_project.jpg?raw=true)
   
   A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有三种颜色
   * 红色: 场景
-  * 绿色: 没有子节点的Prefab（不嵌套包含其他Prefab）
-  * 蓝色: 嵌套包含其他Prefab的Prefab
+  * 粉色: 不被其他Prefab/Scene引用的Prefab
+  * 绿色: 不引用其他Prefab的Prefab
+  * 蓝色: 既被引用，又引用其他Prefab的Prefab
   
 
 ## 术语(Terms)

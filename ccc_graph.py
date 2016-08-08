@@ -63,7 +63,7 @@ def create_asset_graph(asset):
     """
     g = nx.DiGraph()
     assets = [asset]
-    assets += asset.search_referents()
+    assets += asset.search_referers()
     if isinstance(asset, Prefab):
         assets += asset.search_referers()
 
@@ -96,7 +96,9 @@ def add_node(g, asset):
     :param Asset asset:
     """
     if isinstance(asset, Prefab):
-        if not asset.referents:
+        if not asset.referers:
+            color = 'purple'
+        elif not asset.referents:
             color = 'green'
         else:
             color = 'blue'
@@ -165,13 +167,19 @@ e.g.:
     project.load()
 
     output = option.output
-    if not output:
-        output = '%s.jpg' % project.name
 
     if len(args) > 0:
         asset = project.get_asset_by_path(args[1])
+        if not asset:
+            print 'Asset not found:', option.asset
+            return
+
+        if not output:
+            output = '%s.jpg' % asset.file.name
         create_image(create_asset_graph(asset), output)
     else:
+        if not output:
+            output = '%s.jpg' % project.name
         create_image(create_project_graph(project), output)
 
 if __name__ == '__main__':
