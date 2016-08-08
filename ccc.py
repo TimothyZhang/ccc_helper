@@ -26,9 +26,7 @@ import shutil
 import traceback
 import uuid
 from collections import OrderedDict
-
 import datetime
-
 import sys
 
 ASSETS_PATH = 'assets'
@@ -590,6 +588,12 @@ class Node(Element):
             component = Component(self.project, self)
             component.load(file_, component_ref['__id__'])
             self.components.append(component)
+
+            # Component名字
+            try:
+                _ = component.name
+            except:
+                raise Exception('missing script in "%s": %s' % (self.relative_path, component.type))
 
             # R2: 每一个Node的Component不可重复
             if component.name in names:
@@ -1413,7 +1417,7 @@ class Project(object):
         bundle_js = os.path.join('library', 'bundle.project.js')
         bundle = open(bundle_js).read()
         # cc._RFpush(module, '4c3c5p1IVNIn7SN0Moet2KO', 'KdPrefab');
-        pairs = re.findall('cc\._RFpush\(module,\s+\'([a-zA-Z0-9]+)\',\s+\'([a-zA-Z0-9_]+)\'\);', bundle, re.M)
+        pairs = re.findall('cc\._RFpush\(module,\s+\'(.+?)\',\s+\'([a-zA-Z0-9_]+)\'\);', bundle, re.M)
         # noinspection PyTypeChecker
         self._component_id_to_names = dict(pairs)
 
@@ -1457,7 +1461,13 @@ class Project(object):
         return asset
 
     def get_component_name(self, id_):
-        return self._component_id_to_names.get(id_, id_)
+        if id_.startswith('cc.'):
+            return id_
+
+        name = self._component_id_to_names.get(id_)
+        if name is None:
+            raise Exception('Component not found: %s' % id_)
+        return name
 
     def iterate_assets(self):
         """
