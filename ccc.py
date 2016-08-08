@@ -286,10 +286,10 @@ class Asset(Element):
 
         # 用于解析Asset之间的依赖关系
         # 我引用到的
-        self.references = set()
+        self.referents = set()
         """:type: set[Prefab]"""
         # 引用到我的
-        self.referents = set()
+        self.referers = set()
         """:type: set[Asset]"""
         # 在森林中的深度(从根开始的最长路径)
         self.depth = 0
@@ -362,16 +362,16 @@ class Asset(Element):
                 current = current.get_child_by_name(item)
         return current
 
-    def search_referents(self):
+    def search_referers(self):
         """
         查找引用到prefab的所有asset(prefab/scene)，包含直接/间接引用的。按照依赖关系排序(前面的不依赖后面的)。
         :rtype: list[Asset]
         """
         assets, result = {self}, set()
         while assets:
-            referents = set(sum([list(asset.referents) for asset in assets], []))
-            result.update(referents)
-            assets = referents
+            referers = set(sum([list(asset.referers) for asset in assets], []))
+            result.update(referers)
+            assets = referers
 
         result = list(result)
         result.sort(key=lambda x: x.depth, reverse=True)  # depth大的在前
@@ -410,14 +410,14 @@ class SceneAsset(Asset):
     def _save(self, file_, data):
         data['scene'] = create_element_ref(self.root.save(file_))
 
-    def search_references(self):
+    def search_referents(self):
         """
         查找所有被引用asset(prefab/scene)，包含直接/间接引用的。按照依赖关系排序(前面的不依赖后面的)。
         :rtype: list[Asset]
         """
         assets, result = {self}, set()
         while assets:
-            refs = set(sum([list(asset.references) for asset in assets], []))
+            refs = set(sum([list(asset.referents) for asset in assets], []))
             result.update(refs)
             assets = refs
 
@@ -1171,7 +1171,7 @@ class NodeReference(Value):
             return create_element_ref(None)
 
     def __str__(self):
-        return '<Reference path=%s/>' % self._relative_path
+        return '<NodeReference path=%s/>' % self._relative_path
 
 
 class ComponentReference(Value):
@@ -1231,7 +1231,7 @@ class ComponentReference(Value):
         return create_element_ref(None)
 
     def __str__(self):
-        return '<Reference path=%s/>' % self._relative_path
+        return '<ComponentReference path=%s/>' % self._relative_path
 
 
 # class Color(Value):
@@ -1460,7 +1460,7 @@ class Project(object):
         :param bool dry_run:
         :return:
         """
-        assets = prefab.search_referents()
+        assets = prefab.search_referers()
         assets.insert(0, prefab)
         self._synchronized_assets(assets, dry_run, 'synchronize %s' % prefab.relative_path)
 
@@ -1532,39 +1532,39 @@ class Project(object):
         """
         # # 初始化
         # for asset in self.iterate_assets():
-        #     asset.references = []
         #     asset.referents = []
+        #     asset.referers = []
         #     asset.depth = 0
 
         # 查找每个Asset引用到的其他Asset，形成森林
         for asset in self.iterate_assets():
             for node in asset.root.iterate_instance_roots(False):
                 prefab = self.get_asset_by_uuid(node.get_prefab_uuid())
-                asset.references.add(prefab)
-                prefab.referents.add(asset)
+                asset.referents.add(prefab)
+                prefab.referers.add(asset)
 
         # BFS遍历，计算每个asset的depth
         # 所有的树根，depth都为0
-        assets = {asset for asset in self.iterate_assets() if not asset.referents}
+        assets = {asset for asset in self.iterate_assets() if not asset.referers}
         depth = 1
         while assets:
-            references = set(sum([list(asset.references) for asset in assets], []))  # 被引用的
-            for child in references:
+            referents = set(sum([list(asset.referents) for asset in assets], []))  # 被引用的
+            for child in referents:
                 child.depth = depth
 
             depth += 1
-            assets = references
-
-    def dump_references(self):
-        for asset in self.iterate_assets():
-            print asset.relative_path
-            for ref in asset.references:
-                print '   ', ref.relative_path
+            assets = referents
 
     def dump_referents(self):
         for asset in self.iterate_assets():
             print asset.relative_path
             for ref in asset.referents:
+                print '   ', ref.relative_path
+
+    def dump_referers(self):
+        for asset in self.iterate_assets():
+            print asset.relative_path
+            for ref in asset.referers:
                 print '   ', ref.relative_path
 
 
@@ -1787,7 +1787,7 @@ def load_ref(file_, element, val):
             elif isinstance(referenced, Component):
                 return ComponentReference(element.node, referenced)
             else:
-                raise Exception('unknown reference: %s' % referenced)
+                raise Exception('unknown element reference: %s' % referenced)
 
     class_ = Argument
     assert isinstance(element, Component)
@@ -1927,7 +1927,7 @@ class CompareContext(object):
 def test2():
     p = Project('../kingdom')
     p.load()
-    p.dump_references()
+    p.dump_referents()
 
 
 def main():
@@ -1938,11 +1938,11 @@ python ccc.py [options] action
 e.g.:
     # synchronize all prefabs in project
     python ccc.py -p . sync
-    # synchronize one prefab (to prefabs/scenes which has referenced to it)
+    # synchronize one prefab (to prefabs/scenes which has reference to it)
     python ccc.py -p . sync a.prefab
     # verify entire project, won't modify any file
     python ccc.py -p . verify
-    # verify one prefab (and its referents)
+    # verify one prefab (and its referers)
     python ccc.py -p . verify a.prefab
 """
 
