@@ -20,8 +20,9 @@
   
   A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有三种颜色
   * 红色: 场景
-  * 绿色: 没有子节点的Prefab（不嵌套包含其他Prefab）
-  * 蓝色: 嵌套包含其他Prefab的Prefab
+  * 粉色: 不被其他Prefab/Scene引用的Prefab
+  * 绿色: 不引用其他Prefab的Prefab
+  * 蓝色: 既被引用，又引用其他Prefab的Prefab
   
 
 ## 术语(Terms)

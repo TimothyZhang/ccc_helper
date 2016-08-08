@@ -1515,6 +1515,7 @@ class Project(object):
         :param str path: relative to assets
         :rtype: Asset
         """
+        path = path.replace('\\', '/')
         return self._path_to_assets.get(path)
 
     def get_prefab_by_path(self, path):
