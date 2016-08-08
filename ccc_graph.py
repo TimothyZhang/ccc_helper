@@ -139,18 +139,18 @@ def create_image(g, path):
 def main():
     parser = optparse.OptionParser()
     parser.add_option('-p', '--project', dest='project', help='project path')
-    parser.add_option('-a', '--asset', dest='asset', help='asset path (relative to assets)')
+    # parser.add_option('-a', '--asset', dest='asset', help='asset path (relative to assets)')
     parser.add_option('-o', '--output', dest='output', help='output file name')
     parser.add_option('-l', '--long', dest='long', default=False, action='store_true',
                       help='show long label (relative path to assets)')
 
     usage = """
-python ccc_graph.py [options]
+python ccc_graph.py [options] [asset]
 e.g.:
     # visualize entire project (to ccc.png)
     python ccc_graph.py -p .
     # visualize one prefab (and its referer and referents)
-    python ccc_graph.py -p . -a a.prefab -o prefab_a.png
+    python ccc_graph.py -p . -o prefab_a.png path/relative/to/assets/xxx.prefab
 """
 
     parser.set_usage(usage)
@@ -167,9 +167,9 @@ e.g.:
     output = option.output
     if not output:
         output = '%s.jpg' % project.name
-    
-    if option.asset:        
-        asset = project.get_asset_by_path(option.asset)
+
+    if len(args) > 0:
+        asset = project.get_asset_by_path(args[1])
         create_image(create_asset_graph(asset), output)
     else:
         create_image(create_project_graph(project), output)

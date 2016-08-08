@@ -1924,6 +1924,28 @@ class CompareContext(object):
         return '%s' % self._diff
 
 
+def dump_referers(assets):
+    """
+    :param list[Asset] assets:
+    """
+    for asset in assets:
+        print asset.relative_path
+        for ref in asset.referers:
+            print '   ', ref.relative_path
+        print
+
+
+def dump_referents(assets):
+    """
+    :param list[Asset] assets:
+    """
+    for asset in assets:
+        print asset.relative_path
+        for ref in asset.referents:
+            print '   ', ref.relative_path
+        print
+
+
 def test2():
     p = Project('../kingdom')
     p.load()
@@ -1935,6 +1957,12 @@ def main():
     parser.add_option('-p', '--project', dest='project', help='project path')
     usage = """
 python ccc.py [options] action
+actions:
+    verify
+    sync
+    dump_referers
+    dump_referents
+
 e.g.:
     # synchronize all prefabs in project
     python ccc.py -p . sync
@@ -1973,6 +2001,20 @@ e.g.:
             project.synchronize_prefab(asset, True)
         else:
             project.synchronize_all_instances(True)
+    elif action == 'dump_referers':
+        if asset:
+            assert isinstance(asset, Prefab)
+            # noinspection PyTypeChecker
+            dump_referers([asset] + asset.search_referers())
+        else:
+            dump_referers(list(project.iterate_assets()))
+    elif action == 'dump_referents':
+        if asset:
+            assert isinstance(asset, Prefab)
+            # noinspection PyTypeChecker
+            dump_referents([asset] + asset.search_referers())
+        else:
+            dump_referents(list(project.iterate_assets()))
     else:
         parser.print_help()
 
