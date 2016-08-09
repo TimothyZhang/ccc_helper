@@ -55,7 +55,7 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
 * SS6: 忽略Layout的_layoutSize
 * SS7: cc.Label的overflow为NONE时，忽略宽度;overflow为RESIZE_HEIGHT时，忽略高度
-* SS8: KdText,忽略KdLabel.string, Sprite.spriteFrame
+* SS8: KdText,忽略Label.string, Sprite.spriteFrame
 * SS9: KdLabel,忽略Node的_color, Label的_actualFontSize, _isSystemFontUsed, _N$file, _fontSize, _lineHeight, 以及LabelOutline, KdLabelShadow
 
 其中SS5, SS6, SS7, SS8, SS9主要是为了减少diff的输出。
