@@ -26,9 +26,7 @@ import shutil
 import traceback
 import uuid
 from collections import OrderedDict
-
 import datetime
-
 import sys
 
 ASSETS_PATH = 'assets'
@@ -43,6 +41,11 @@ INSTANCE_ROOT_IGNORE_PROPERTIES = {'_position', '_rotationX', '_rotationY', '_sc
 IGNORE_COMPONENT_PROPERTIES = {
     'cc.Layout': ['_layoutSize']
 }
+
+
+class LabelOverflow(object):
+    NONE = 0
+    RESIZE_HEIGHT = 3
 
 
 class KdPrefabStrategy(object):
@@ -292,7 +295,7 @@ class Asset(Element):
         self.referers = set()
         """:type: set[Asset]"""
         # 在森林中的深度(从根开始的最长路径)
-        self.depth = 0
+        self.depth = None
 
     @property
     def path(self):
@@ -492,7 +495,7 @@ class Node(Element):
         node = self
         root = None
         while node:
-            if node.get_prefab_uuid() is not None:
+            if node.get_prefab_uuid() is not None and node.parent is not None:
                 root = node
             node = node.parent
         return root
@@ -590,6 +593,12 @@ class Node(Element):
             component = Component(self.project, self)
             component.load(file_, component_ref['__id__'])
             self.components.append(component)
+
+            # Component名字
+            try:
+                _ = component.name
+            except:
+                raise Exception('missing script in "%s": %s' % (self.relative_path, component.type))
 
             # R2: 每一个Node的Component不可重复
             if component.name in names:
@@ -707,7 +716,7 @@ class Node(Element):
         else:
             ctx.push(self.name)
 
-        self.synchronize_without_children(other, ctx, is_instance_root)
+        self._synchronize_without_children(other, ctx, is_instance_root)
 
         to_remove = []
         for i, my_child in enumerate(self.children):
@@ -739,7 +748,7 @@ class Node(Element):
             ctx.change('(children order)', my_order, other_order)
         ctx.pop()
 
-    def synchronize_without_children(self, other, ctx, is_instance_root):
+    def _synchronize_without_children(self, other, ctx, is_instance_root):
         """
         :param Node other:
         :param CompareContext ctx:
@@ -753,6 +762,11 @@ class Node(Element):
         # CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性
         if other._ignore_properties:
             ignores = ignores.union(other._ignore_properties)
+
+        # SS9: KdLabel,忽略color, font, fontSize, lineHeight
+        kdlabel = self.get_component('KdLabel')
+        if kdlabel:
+            ignores.add('_color')
 
         # SS2: instance root忽略: position, rotation, scale, anchor, size, skew, name
         synchronize_dict(self, other, self._data, other._data, ctx, ignores)
@@ -768,6 +782,29 @@ class Node(Element):
             self.prefab_info.uuid = other.root.root_element.file.uuid
 
         # components
+        self._synchronize_components(other, ctx, is_instance_root)
+
+        # SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
+        # 必须在组件同步完之后处理!
+        self._synchronize_position_and_size(other, ctx, is_instance_root, ignores)
+
+    def _synchronize_components(self, other, ctx, is_instance_root):
+        """
+        :param Node other:
+        :param CompareContext ctx:
+        :param bool is_instance_root:
+        """
+        ignore_components = self.project.ignore_components
+
+        # SS9: KdLabel,忽略color, font, fontSize, lineHeight
+        self_kdlabel = self.get_component('KdLabel') is not None
+        other_kdlabel = other.get_component('KdLabel') is not None
+        ignore_kdlabel = 'KdLabel' in self.project.ignore_components
+
+        if (self_kdlabel and other_kdlabel) or (self_kdlabel and ignore_kdlabel) \
+                or (other_kdlabel and not ignore_kdlabel):
+            ignore_components = ignore_components.union({'cc.LabelOutline', 'KdLabelShadow'})
+
         ctx.push('(components)')
         to_remove = []
         for i, component in enumerate(self.components):
@@ -776,7 +813,7 @@ class Node(Element):
                 continue
 
             # CR1: 完全忽略组件(ignore_components)
-            if component.name in self.project.ignore_components:
+            if component.name in ignore_components:
                 continue
 
             other_component = other.get_component(component.name)
@@ -821,11 +858,7 @@ class Node(Element):
                 ctx.change('(component order)', my_names, other_names)
         ctx.pop()  # components
 
-        # SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
-        # 必须在组件同步完之后处理!
-        self.synchronize_position_and_size(other, ctx, is_instance_root, ignores)
-
-    def synchronize_position_and_size(self, other, ctx, is_instance_root, ignores):
+    def _synchronize_position_and_size(self, other, ctx, is_instance_root, ignores):
         """
         SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
         :param Node other:
@@ -903,6 +936,16 @@ class Node(Element):
                                 size_ignores.add('width')
                             elif type_ == LayoutType.VERTICAL:
                                 size_ignores.add('height')
+
+        # cc.Label
+        # SS7: cc.Label的overflow为NONE时，忽略宽度;overflow为RESIZE_HEIGHT时，忽略高度
+        label = self.get_component('cc.Label')
+        if label:
+            overflow = label.get_property('_N$overflow')
+            if overflow == LabelOverflow.NONE:
+                size_ignores.add('width')
+            elif overflow == LabelOverflow.RESIZE_HEIGHT:
+                size_ignores.add('height')
 
         if self.position is None:
             assert self.loaded_index == -1
@@ -1035,9 +1078,60 @@ class Component(Element):
         if other._ignore_properties:
             ignores = ignores.union(other._ignore_properties)
 
+        # SS8: KdText,忽略KdLabel.string, Sprite.spriteFrame
+        ignores = ignores.union(self.ignore_by_kd_text(other))
+
+        # SS9: KdLabel,忽略color, font, fontSize, lineHeight
+        ignores = ignores.union(self.ignore_by_kd_label(other))
+
+        # SS10: KdText的i18nKey和args都为空时，不同步
+        if self.name == 'KdText':
+            if not other.get_property('_N$i18nKey') and not other.get_property('args'):
+                ignores = ignores.union(['_N$i18nKey', 'args'])
+
         ctx.push(self.name)
         synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignores)
         ctx.pop()
+
+    def ignore_by_kd_text(self, other):
+        """
+        :param Component other:
+        :rtype: set[str]
+        """
+        if self.name not in {'cc.Label', 'cc.Sprite'}:
+            return set()
+
+        self_kd_text = self.node.get_component('KdText') is not None
+        other_kd_text = other.node.get_component('KdText') is not None
+        ignore_kd_text = 'KdText' in self.project.ignore_components
+        if (self_kd_text and other_kd_text) or (self_kd_text and ignore_kd_text) \
+                or (other_kd_text and not ignore_kd_text):
+            if self.name == 'cc.Label':
+                return {'_N$string'}
+            elif self.name == 'cc.Sprite':
+                # 不要忽略_atlas，因为KdText有可能不修改_atlas
+                return {'_spriteFrame'}
+
+        return set()
+
+    def ignore_by_kd_label(self, other):
+        """
+        :param Component other:
+        :rtype: set[str]
+        """
+        if self.name != 'cc.Label':
+            return set()
+
+        self_kd_label = self.node.get_component('KdLabel') is not None
+        other_kd_label = other.node.get_component('KdLabel') is not None
+        ignore_kd_label = 'KdLabel' in self.project.ignore_components
+
+        if (self_kd_label and other_kd_label) or (self_kd_label and ignore_kd_label) \
+                or (other_kd_label and not ignore_kd_label):
+            if self.name == 'cc.Label':
+                return {'_isSystemFontUsed', '_N$file', '_lineHeight', '_fontSize', '_actualFontSize'}
+
+        return set()
 
     def __str__(self):
         return '<%s name=%s node=%s/>' % (self.__class__.__name__, self.name, self.node.relative_path)
@@ -1289,8 +1383,19 @@ class PrefabInfo(Element):
 
     def post_load(self, file_):
         root_ref = self.pop_data('root')
-        if get_element_ref(root_ref) != self.node.instance_root.loaded_index:
-            raise Exception('Instance root not match: %s' % self.node.relative_path)
+
+        if isinstance(self.node.root.root_element, Prefab):
+            if get_element_ref(root_ref) != self.node.root.loaded_index:
+                if get_element_ref(root_ref) != self.node.instance_root.loaded_index:
+                    raise Exception('Invalid PrefabInfo: %s %s %s' % (self.node.relative_path,
+                                                                      self.node.instance_root.relative_path,
+                                                                      file_.elements[get_element_ref(root_ref)][0]))
+        else:
+            if get_element_ref(root_ref) != self.node.instance_root.loaded_index:
+                ref = file_.elements[get_element_ref(root_ref)][0]
+                raise Exception('Instance root not match: %s %s %s' % (self.node.relative_path,
+                                                                       self.node.instance_root.relative_path,
+                                                                       ref.relative_path))
 
     @property
     def file_id(self):
@@ -1346,16 +1451,17 @@ class Project(object):
         try:
             self._load_component_names()
             errors += self._load_assets()
-            self._sort_assets()
+            if not errors:
+                self._sort_assets()
         finally:
             os.chdir(cwd)
 
-        errors += self._ignore_prefabs()
+        errors += self._check_ignore_prefabs()
 
         if errors > 0:
             raise Exception('Load failed.')
 
-    def _ignore_prefabs(self):
+    def _check_ignore_prefabs(self):
         errors = 0
 
         for path, elements in self.ignore_prefabs.iteritems():
@@ -1375,7 +1481,12 @@ class Project(object):
         return errors
 
     def _load_setting(self):
-        setting = yaml.load(open(os.path.join(self.path, 'ccc_helper.yaml')))
+        yaml_path = os.path.join(self.path, 'ccc_helper.yaml')
+        if not os.path.exists(yaml_path):
+            print 'setting not found at:', yaml_path
+            return
+
+        setting = yaml.load(open(yaml_path))
         self.ignore_components = set(setting.get('ignore_components', []))
 
         ignore_component_properties = setting.get('ignore_component_properties', {})
@@ -1395,7 +1506,7 @@ class Project(object):
         bundle_js = os.path.join('library', 'bundle.project.js')
         bundle = open(bundle_js).read()
         # cc._RFpush(module, '4c3c5p1IVNIn7SN0Moet2KO', 'KdPrefab');
-        pairs = re.findall('cc\._RFpush\(module,\s+\'([a-zA-Z0-9]+)\',\s+\'([a-zA-Z0-9_]+)\'\);', bundle, re.M)
+        pairs = re.findall('cc\._RFpush\(\s*module\s*,\s*\'(.+?)\'\s*,\s*\'(.+?)\'\s*\);', bundle, re.M)
         # noinspection PyTypeChecker
         self._component_id_to_names = dict(pairs)
 
@@ -1439,7 +1550,13 @@ class Project(object):
         return asset
 
     def get_component_name(self, id_):
-        return self._component_id_to_names.get(id_, id_)
+        if id_.startswith('cc.'):
+            return id_
+
+        name = self._component_id_to_names.get(id_)
+        if name is None:
+            raise Exception('Component not found: %s' % id_)
+        return name
 
     def iterate_assets(self):
         """
@@ -1547,14 +1664,21 @@ class Project(object):
         # BFS遍历，计算每个asset的depth
         # 所有的树根，depth都为0
         assets = {asset for asset in self.iterate_assets() if not asset.referers}
-        depth = 1
+        depth = 0
         while assets:
-            referents = set(sum([list(asset.referents) for asset in assets], []))  # 被引用的
-            for child in referents:
-                child.depth = depth
+            if depth > 100:
+                raise Exception('cyclic reference: %s' % list(assets)[0].relative_path)
 
+            for asset in assets:
+                asset.depth = depth
+
+            assets = set(sum([list(asset.referents) for asset in assets], []))  # 被引用的
             depth += 1
-            assets = referents
+
+        # 如果有循环引用，某些节点的depth可能为None（另一种可能是上面的循环不会结束）
+        for asset in self.iterate_assets():
+            if asset.depth is None:
+                raise Exception('cyclic reference: %s' % asset.relative_path)
 
     def dump_referents(self):
         for asset in self.iterate_assets():
@@ -1738,10 +1862,19 @@ def synchronize_value(name, element1, element2, v1, v2, ctx):
         v1.synchronize(v2, ctx)
         return v1
     else:
+        # if not compare_value(v1, v2):
         if v1 != v2:
             ctx.change(name, v1, v2)
         assert is_primitive(v2)
         return copy.deepcopy(v2)
+
+
+# def compare_value(v1, v2):
+#     if isinstance(v1, (int, float)) and isinstance(v2, (int, float)):
+#         # 精确到小数点后2位
+#         return int(v1 * 100) == int(v2 * 100)
+#
+#     return v1 == v2
 
 
 def load_dict(file_, element, dict_):
@@ -1979,7 +2112,7 @@ e.g.:
 
     option, args = parser.parse_args()
     action = args[0] if args else None
-    if action not in ('sync', 'verify'):
+    if action not in ('sync', 'verify', 'dump_referers', 'dump_referents'):
         parser.print_help()
         return
 
