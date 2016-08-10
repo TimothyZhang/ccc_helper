@@ -1084,6 +1084,11 @@ class Component(Element):
         # SS9: KdLabel,忽略color, font, fontSize, lineHeight
         ignores = ignores.union(self.ignore_by_kd_label(other))
 
+        # SS10: KdText的i18nKey和args都为空时，不同步
+        if self.name == 'KdText':
+            if not other.get_property('_N$i18nKey') and not other.get_property('args'):
+                ignores = ignores.union(['_N$i18nKey', 'args'])
+
         ctx.push(self.name)
         synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignores)
         ctx.pop()
@@ -1857,10 +1862,19 @@ def synchronize_value(name, element1, element2, v1, v2, ctx):
         v1.synchronize(v2, ctx)
         return v1
     else:
+        # if not compare_value(v1, v2):
         if v1 != v2:
             ctx.change(name, v1, v2)
         assert is_primitive(v2)
         return copy.deepcopy(v2)
+
+
+# def compare_value(v1, v2):
+#     if isinstance(v1, (int, float)) and isinstance(v2, (int, float)):
+#         # 精确到小数点后2位
+#         return int(v1 * 100) == int(v2 * 100)
+#
+#     return v1 == v2
 
 
 def load_dict(file_, element, dict_):
