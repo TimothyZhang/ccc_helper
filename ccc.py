@@ -1029,7 +1029,7 @@ class Component(Element):
         # CR3: 忽略组件的空属性(ignore_component_properties_if_empty)，空指0, "", [], null等，或不存在
         for property_name in self.project.ignore_component_properties_if_empty.get(self.name, set()):
             if not other._data.get(property_name):
-                ignores = ignores.union(property_name)
+                ignores = ignores.union([property_name])
 
         # CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性
         if other._ignore_properties:
