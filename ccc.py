@@ -1416,7 +1416,12 @@ class PrefabInfo(Element):
         self._data['asset'] = {'__uuid__': val} if val else None
 
     def _save(self, file_, data):
-        data['root'] = create_element_ref(self.node.instance_root.save(file_))
+        if isinstance(self.node.root.root_element, Prefab):
+            # 按理说应该存instance root的，不过ccc本身不支持嵌套，所以按照ccc本身的设计，存prefab root
+            # and not if self.node.instance_root:
+            data['root'] = create_element_ref(self.node.root.save(file_))
+        else:
+            data['root'] = create_element_ref(self.node.instance_root.save(file_))
 
 
 class Project(object):
