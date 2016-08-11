@@ -206,6 +206,8 @@ class Element(object):
         :param int index:
         """
         self._data = copy.deepcopy(file_.data[index])
+        if '__type__' not in self._data:
+            k = 1
         self._keys = self._data.keys()
         self._loaded_index = index
         assert self.type == self._data['__type__'], '%s %s' % (self.type, self._data['__type__'])
@@ -773,13 +775,11 @@ class Node(Element):
 
         if is_instance_root:
             assert isinstance(other.root_element, Prefab)
-            self.prefab_info.file_id = other.prefab_info.file_id
-            self.prefab_info.uuid = other.root_element.file.uuid
+            assert self.prefab_info
         else:
             if not self.prefab_info:
                 self.prefab_info = PrefabInfo(self.project, self)
-            self.prefab_info.file_id = other.prefab_info.file_id
-            self.prefab_info.uuid = other.root.root_element.file.uuid
+        self.prefab_info.synchronize(other.prefab_info, ctx)
 
         # components
         self._synchronize_components(other, ctx, is_instance_root)
@@ -1320,7 +1320,7 @@ class ComponentReference(Value):
             component = referenced_node.get_component(self._component_name)
             if component:
                 assert component.saved_index != -1
-                return create_element_ref(referenced_node.saved_index)
+                return create_element_ref(component.saved_index)
 
         return create_element_ref(None)
 
@@ -1422,6 +1422,11 @@ class PrefabInfo(Element):
             data['root'] = create_element_ref(self.node.root.save(file_))
         else:
             data['root'] = create_element_ref(self.node.instance_root.save(file_))
+
+    def synchronize(self, other, ctx):
+        Element.synchronize(self, other, ctx)
+        self.file_id = other.file_id
+        self.uuid = other.node.root.root_element.file.uuid
 
 
 class Project(object):
