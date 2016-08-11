@@ -1026,7 +1026,7 @@ class Component(Element):
         # R4: Button的clickEvents最多只能有一个元素
         if self.type == 'cc.Button':
             if len(self.get_property('clickEvents')) > 1:
-                raise Exception('Button have too many clickEvents: %s' % self.node.relative_path)
+                raise Exception('Button has too many clickEvents: %s' % self.node.relative_path)
 
         if self.type == 'cc.Layout':
             type_ = self.get_property('_N$layoutType')
@@ -1782,11 +1782,11 @@ def synchronize_dict(element1, element2, dict1, dict2, ctx, ignores=set()):
     for k in to_remove:
         dict1.pop(k)
 
-    for k, v in dict2.iteritems():
-        if k in ignores:
+    for k, v2 in dict2.iteritems():
+        if k in ignores and k in dict1:  # 如果dict1中缺少该值，也要同步（一般是新增的节点或者组件）
             continue
-
-        dict1[k] = synchronize_value(k, element1, element2, dict1.get(k), v, ctx)
+        v1 = dict1.get(k)
+        dict1[k] = synchronize_value(k, element1, element2, v1, v2, ctx)
     return dict1
 
 
