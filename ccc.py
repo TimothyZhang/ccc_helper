@@ -32,8 +32,7 @@ import sys
 ASSETS_PATH = 'assets'
 INDENT = '  '
 
-
-NODE_IGNORE_PROPERTIES = {'_active'}
+NODE_IGNORE_PROPERTIES = {'_active', '_reorderChildDirty'}
 INSTANCE_ROOT_IGNORE_PROPERTIES = {'_position', '_rotationX', '_rotationY', '_scaleX', '_scaleY', '_anchorPoint',
                                    '_skewX', '_skewY', '_name', '_localZOrder', '_globalZOrder',
                                    '_tag', '_active'}
