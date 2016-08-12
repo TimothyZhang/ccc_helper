@@ -1,5 +1,7 @@
 ## 警告(Warning)
 **本项目并非官方提供的解决方案。使用之前，请务必备份好数据，否则可能会造成数据丢失!**
+
+
 **This is NOT an official solution, BACKUP you data and use with CAUTION.**
 
 ## 介绍(Introduction)
@@ -71,7 +73,7 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 
   注：无任何引用关系的Prefab/Scene，不会包含在图中
 
-## 支持
-* `http://forum.cocos.com/c/Creator`上@timium
-* github提交issue
+## 支持(Support)
+* [Cocos Creator论坛](http://forum.cocos.com/c/Creator)上@timium
+* [提交issue](https://github.com/TimothyZhang/ccc_helper/issues/new)
 * github提交pull request
