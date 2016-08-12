@@ -1439,8 +1439,12 @@ class PrefabInfo(Element):
         ignore_properties = ignore_properties.union(['asset', 'fileId'])
         Element.synchronize(self, other, ctx, ignore_properties)
 
-        self.file_id = other.file_id
-        self.uuid = other.node.root.root_element.file.uuid
+        if isinstance(self.node.root.root_element, Prefab):
+            self.file_id = self.node.root.prefab_info.file_id
+            self.uuid = self.node.root.root_element.file.uuid
+        else:
+            self.file_id = other.file_id
+            self.uuid = other.node.root.root_element.file.uuid
         ctx.pop()
 
 

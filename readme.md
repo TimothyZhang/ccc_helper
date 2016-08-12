@@ -73,6 +73,9 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 
   注：无任何引用关系的Prefab/Scene，不会包含在图中
 
+## 已知问题(Known Issues)
+* 同步后，cocos creator的`回退(Revert)`功能可能会出错或卡死。可能是PrefabInfo的fileId/uuid处理的不对。
+
 ## 支持(Support)
 * [Cocos Creator论坛](http://forum.cocos.com/c/Creator)上@timium
 * [提交issue](https://github.com/TimothyZhang/ccc_helper/issues/new)
