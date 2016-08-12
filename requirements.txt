@@ -1,5 +1,7 @@
-# ccc_graph需要以下python库
+Python 2.7.x
 yaml
+
+# ccc_graph需要以下python库
 networkx
 pygraphviz(需要安装graphviz)
 

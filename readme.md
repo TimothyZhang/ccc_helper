@@ -49,7 +49,16 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性(ignore_prefabs)
 
 
-## 使用(Usage)
+## 运行环境(Runtime Environments)
+* Python 2.7.x
+* pyyaml
+
+如需生成引用关系图，需要用到以下库
+* networkx
+* pygraphviz(需要安装graphviz)
+
+
+## 如何使用(How-to)
 首先，确保文件`library/bundle.project.js`存在。如果不存在，需用cocos creator打开项目，会自动生成该文件。
 
 * Compare prefabs and their referents. 检查项目中哪些Prefab不一致
