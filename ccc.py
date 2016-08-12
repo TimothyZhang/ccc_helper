@@ -206,8 +206,6 @@ class Element(object):
         :param int index:
         """
         self._data = copy.deepcopy(file_.data[index])
-        if '__type__' not in self._data:
-            k = 1
         self._keys = self._data.keys()
         self._loaded_index = index
         assert self.type == self._data['__type__'], '%s %s' % (self.type, self._data['__type__'])
@@ -256,13 +254,15 @@ class Element(object):
     #     """
     #     compare_dict(self, other, self._data, other._data, ctx)
 
-    def synchronize(self, other, ctx):
+    def synchronize(self, other, ctx, ignore_properties=set()):
         """
         :param Element other:
         :param CompareContext ctx:
+        :param set[str] ignore_properties:
         """
         # CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性
-        synchronize_dict(self, other, self._data, other._data, ctx, ignores=other._ignore_properties)
+        ignore_properties = ignore_properties.union(other._ignore_properties)
+        synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignore_properties)
 
     def ignore(self, properties):
         self._ignore_properties = set(properties)
@@ -526,11 +526,19 @@ class Node(Element):
         relative_path = os.path.normpath(relative_path).replace('\\', '/')
         node = self
 
-        for item in relative_path.split('/'):
-            if item == '..':
+        items = relative_path.split('/')
+        for i, item in enumerate(items):
+            if not item:
+                assert i == len(items) - 1
+                break
+
+            if item == '.':
+                node = node
+            elif item == '..':
                 node = node.parent
             else:
                 node = node.get_child_by_name(item)
+
         return node
 
     def get_child_by_name(self, name):
@@ -766,12 +774,13 @@ class Node(Element):
             ignores = ignores.union(other._ignore_properties)
 
         # SS9: KdLabel,忽略color, font, fontSize, lineHeight
-        kdlabel = self.get_component('KdLabel')
-        if kdlabel:
+        kd_label = self.get_component('KdLabel')
+        if kd_label:
             ignores.add('_color')
 
         # SS2: instance root忽略: position, rotation, scale, anchor, size, skew, name
-        synchronize_dict(self, other, self._data, other._data, ctx, ignores)
+        # synchronize_dict(self, other, self._data, other._data, ctx, ignores)
+        Element.synchronize(self, other, ctx, ignores)
 
         if is_instance_root:
             assert isinstance(other.root_element, Prefab)
@@ -797,12 +806,12 @@ class Node(Element):
         ignore_components = self.project.ignore_components
 
         # SS9: KdLabel,忽略color, font, fontSize, lineHeight
-        self_kdlabel = self.get_component('KdLabel') is not None
-        other_kdlabel = other.get_component('KdLabel') is not None
-        ignore_kdlabel = 'KdLabel' in self.project.ignore_components
+        self_kd_label = self.get_component('KdLabel') is not None
+        other_kd_label = other.get_component('KdLabel') is not None
+        ignore_kd_label = 'KdLabel' in self.project.ignore_components
 
-        if (self_kdlabel and other_kdlabel) or (self_kdlabel and ignore_kdlabel) \
-                or (other_kdlabel and not ignore_kdlabel):
+        if (self_kd_label and other_kd_label) or (self_kd_label and ignore_kd_label) \
+                or (other_kd_label and not ignore_kd_label):
             ignore_components = ignore_components.union({'cc.LabelOutline', 'KdLabelShadow'})
 
         ctx.push('(components)')
@@ -1056,10 +1065,11 @@ class Component(Element):
     def _save(self, file_, data):
         data['node'] = create_element_ref(self.node.saved_index)
 
-    def synchronize(self, other, ctx):
+    def synchronize(self, other, ctx, ignore_properties=set()):
         """
         :param Component other:
         :param CompareContext ctx:
+        :param set[str] ignore_properties:
         """
         assert isinstance(other, Component)
         # 否则没有self.name
@@ -1090,7 +1100,8 @@ class Component(Element):
                 ignores = ignores.union(['_N$i18nKey', 'args'])
 
         ctx.push(self.name)
-        synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignores)
+        # synchronize_dict(self, other, self._data, other._data, ctx, ignores=ignores)
+        Element.synchronize(self, other, ctx, ignores)
         ctx.pop()
 
     def ignore_by_kd_text(self, other):
@@ -1423,10 +1434,14 @@ class PrefabInfo(Element):
         else:
             data['root'] = create_element_ref(self.node.instance_root.save(file_))
 
-    def synchronize(self, other, ctx):
-        Element.synchronize(self, other, ctx)
+    def synchronize(self, other, ctx, ignore_properties=set()):
+        ctx.push(self.type)
+        ignore_properties = ignore_properties.union(['asset', 'fileId'])
+        Element.synchronize(self, other, ctx, ignore_properties)
+
         self.file_id = other.file_id
         self.uuid = other.node.root.root_element.file.uuid
+        ctx.pop()
 
 
 class Project(object):
