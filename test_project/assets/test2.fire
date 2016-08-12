@@ -312,7 +312,9 @@
     },
     "_enabled": true,
     "strategy": 0,
-    "prefab": null
+    "prefab": {
+      "__uuid__": "f1361b34-5d23-4f7d-bbd4-c95ec00a8438"
+    }
   },
   {
     "__type__": "cc.PrefabInfo",
