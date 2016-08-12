@@ -1040,7 +1040,7 @@ class Component(Element):
         if self.type == 'cc.Layout':
             type_ = self.get_property('_N$layoutType')
             resize_mode = self.get_property('_resize')
-            # R6: 只能包含已知的Type和ResizeMode
+            # 只能包含已知的Type和ResizeMode(如果ccc增加了新类型，可能需要修改代码)
             if type_ not in {LayoutType.NONE, LayoutType.HORIZONTAL, LayoutType.VERTICAL, LayoutType.GRID}:
                 raise Exception('Unknown layout type %s: %s' % (type_, self.node.relative_path))
 
