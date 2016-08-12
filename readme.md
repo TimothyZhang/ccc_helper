@@ -30,7 +30,7 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * SS1: 只有当prefab root和instance root的KdPrefab.strategy都为DEFAULT(0)，才会同步
 * SS2: instance root忽略: position, rotation, scale, anchor, skew, name, zOrder, tag, active
 * SS3: instance root忽略: Widget(除非prefab root中有Widget而instance中没有)
-* SS4: 忽略Node的active和_reorderChildDirty
+* SS4: 忽略Node的active和_reorderChildDirty(不太确定是否可以)
 * SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
 * SS6: 忽略Layout的_layoutSize(其实不是很确定是否应该如此)
 * SS7: cc.Label的overflow为NONE时，忽略宽度;overflow为RESIZE_HEIGHT时，忽略高度
