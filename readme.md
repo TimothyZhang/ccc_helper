@@ -24,7 +24,6 @@ Kd开头的组件，为作者自定义组件，忽略即可。
   * R3-1: 其中的prefab属性指向Prefab自身
 * R4: Button的clickEvents最多只能有一个元素(如有特殊需要，也可以不限制，但是可能比较容易出错，见R5)
 * R5: 数组中间插入/删除元素后，从插入位置开始之后的元素，不一定能增量同步
-* R6: Layout只能包含已知的Type和ResizeMode(以防ccc增加了新的类型）
 
 
 ## 同步策略(Synchronization Strategies)
