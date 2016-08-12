@@ -9,7 +9,7 @@ cc.Class({
 
     properties: {
         strategy: {
-            default: PrefabSynchronizeStrategy.ALL,
+            default: PrefabSynchronizeStrategy.DEFAULT,
             type: PrefabSynchronizeStrategy,
             tooltip: 'Prefab同步策略'
         },
