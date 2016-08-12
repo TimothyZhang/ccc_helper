@@ -38,7 +38,7 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * SS9: KdLabel,忽略Node的_color, Label的_actualFontSize, _isSystemFontUsed, _N$file, _fontSize, _lineHeight, 以及LabelOutline, KdLabelShadow
 * SS10: KdText的i18nKey和args都为空时，不同步
 
-其中SS5, SS6, SS7, SS8, SS9主要是为了减少diff的输出。
+其中SS5, SS6, SS7, SS8, SS9主要是为了减少diff的输出，便于人工查错。
 
 
 ## 自定义规则(Custom Rules)
@@ -64,9 +64,11 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * Compare prefabs and their referents. 检查项目中哪些Prefab不一致
 > ccc.py -p test_project verify
 
-
 * 同步项目中所有不一致的Prefab
 > ccc.py -p test_project sync
+
+verify或sync结束后，在<project_root>/ccc_helper_backup中会有相应的日志和备份文件。
+
 
 * 查看项目中所有Prefab/Scene的引用关系
 > ccc_graph.py -p test_project
