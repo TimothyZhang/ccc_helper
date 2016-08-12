@@ -2102,8 +2102,8 @@ def main():
     usage = """
 python ccc.py [options] action
 actions:
-    verify
-    sync
+    verify [prefab]
+    sync [prefab]
     dump_referers
     dump_referents
 
