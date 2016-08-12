@@ -1435,7 +1435,7 @@ class PrefabInfo(Element):
             data['root'] = create_element_ref(self.node.instance_root.save(file_))
 
     def synchronize(self, other, ctx, ignore_properties=set()):
-        ctx.push(self.type)
+        ctx.push('cc.PrefabInfo')
         ignore_properties = ignore_properties.union(['asset', 'fileId'])
         Element.synchronize(self, other, ctx, ignore_properties)
 
