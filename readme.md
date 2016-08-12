@@ -9,33 +9,11 @@
 Kd开头的组件，为作者自定义组件，忽略即可。
 
 
-## 使用(Usage)
-* Compare prefabs and their referents. 检查项目中哪些Prefab不一致
-> ccc.py -p test_project verify
-  
-
-* 同步项目中所有不一致的Prefab
-> ccc.py -p test_project sync
-
-* 查看项目中所有Prefab/Scene的引用关系
-> ccc_graph.py -p test_project
-
-  ![graph of test_project](/test_project.jpg?raw=true)
-  
-  A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有4种颜色
-  * 红色: 场景
-  * 粉色: 不被其他Prefab/Scene引用的Prefab
-  * 绿色: 不引用其他Prefab的Prefab
-  * 蓝色: 既被引用，又引用其他Prefab的Prefab
-
-  注：无任何引用关系的Prefab/Scene，不会包含在图中
-  
-
 ## 术语(Terms)
 * Prefab Root: Prefab文件的根节点
 * Instance Node: 包含KdPrefab组件的Node
 * Instance Root: 祖先中没有Instance Node的Instance Node(Prefab Root除外）
-
+* Synchronize: 同步。将Prefab的内容，递归复制到引用到该Prefab的所有Scene或其他Prefab中。
 
 ## 限制(Restrictions)
 * R1: 每一个Node的Children不可重名
@@ -53,7 +31,7 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 * SS3: instance root忽略: Widget(除非prefab root中有Widget而instance中没有)
 * SS4: 忽略Node.active
 * SS5: Node的size/position受Layout/Widget影响时，不同步相应的x/y/w/h(包括KdLayout/KdWidget)
-* SS6: 忽略Layout的_layoutSize
+* SS6: 忽略Layout的_layoutSize(其实不是很确定是否应该如此)
 * SS7: cc.Label的overflow为NONE时，忽略宽度;overflow为RESIZE_HEIGHT时，忽略高度
 * SS8: KdText,忽略Label.string, Sprite.spriteFrame
 * SS9: KdLabel,忽略Node的_color, Label的_actualFontSize, _isSystemFontUsed, _N$file, _fontSize, _lineHeight, 以及LabelOutline, KdLabelShadow
@@ -63,8 +41,37 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 
 
 ## 自定义规则(Custom Rules)
-在ccc_helper.yaml中配置
+在`<project_root>/ccc_helper.yaml`中配置，模版见`test_project/ccc_helper.yaml`
 * CR1: 完全忽略组件(ignore_components)
 * CR2: 忽略组件的指定属性(ignore_component_properties)
 * CR3: 忽略组件的空属性(ignore_component_properties_if_empty)，空指prefab中，值为0, "", [], null等，或不存在
-* CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性
+* CR4: 忽略特定的prefab中的特定Node的特定组件的特定属性(ignore_prefabs)
+
+
+## 使用(Usage)
+首先，确保文件`library/bundle.project.js`存在。如果不存在，需用cocos creator打开项目，会自动生成该文件。
+
+* Compare prefabs and their referents. 检查项目中哪些Prefab不一致
+> ccc.py -p test_project verify
+
+
+* 同步项目中所有不一致的Prefab
+> ccc.py -p test_project sync
+
+* 查看项目中所有Prefab/Scene的引用关系
+> ccc_graph.py -p test_project
+
+  ![graph of test_project](/test_project.jpg?raw=true)
+
+  A通过箭头指向B，表示A(prefab或scene)中包含了B(prefab)；节点有4种颜色
+  * 红色: 场景
+  * 粉色: 不被其他Prefab/Scene引用的Prefab
+  * 绿色: 不引用其他Prefab的Prefab
+  * 蓝色: 既被引用，又引用其他Prefab的Prefab
+
+  注：无任何引用关系的Prefab/Scene，不会包含在图中
+
+## 支持
+* `http://forum.cocos.com/c/Creator`上@timium
+* github提交issue
+* github提交pull request
