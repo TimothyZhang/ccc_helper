@@ -61,10 +61,10 @@ Kd开头的组件，为作者自定义组件，忽略即可。
 ## 如何使用(How-to)
 首先，确保文件`library/bundle.project.js`存在。如果不存在，需用cocos creator打开项目，会自动生成该文件。
 
-* Compare prefabs and their referents. 检查项目中哪些Prefab不一致
+* 检查项目中哪些Prefab不一致(Compare prefabs and their referers)
 > ccc.py -p test_project verify
 
-* 同步项目中所有不一致的Prefab
+* 同步项目中所有不一致的Prefab(synchronize prefabs to their referers)
 > ccc.py -p test_project sync
 
 verify或sync结束后，在<project_root>/ccc_helper_backup中会有相应的日志和备份文件。
